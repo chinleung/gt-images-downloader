@@ -178,7 +178,7 @@ foreach ($nodes as $index => $node) {
     }
     success('OK!');
 
-    $destination = str_replace($domain, __DIR__, $source);
+    $destination = str_replace($domain, getcwd(), $source);
     message(sprintf('Saving the image from %s%s%s to %s%s%s... ', COLOR_YELLOW, $new, COLOR_END, COLOR_YELLOW, $destination, COLOR_END));
     file_put_contents($destination, file_get_contents($new));
     success('OK!');
