@@ -8,11 +8,11 @@
 | Define the constants and the functions required by the script.
 |
 */
-define("COLOR_END", "\033[0m");
-define("COLOR_GREEN", "\033[0;32m");
-define("COLOR_RED", "\033[0;31m");
-define("COLOR_YELLOW", "\033[1;33m");
-define("COLOR_WHITE", "\033[1;37m");
+define('COLOR_END', "\033[0m");
+define('COLOR_GREEN', "\033[0;32m");
+define('COLOR_RED', "\033[0;31m");
+define('COLOR_YELLOW', "\033[1;33m");
+define('COLOR_WHITE', "\033[1;37m");
 
 /**
  * Abort the script.
@@ -140,7 +140,7 @@ success('OK!');
 
 message('Retrieving the nodes from the report... ');
 $path = new DOMXPath($dom);
-$nodes = $path->query("//a[@href='/optimize-images.html']/following-sibling::*[1] //li");
+$nodes = $path->query("//tr[contains(@class, 'audit-uses-optimized-images')]");
 success('OK!');
 
 $totalNodes = count($nodes);
@@ -159,15 +159,15 @@ line(sprintf('Found %s%d%s node%s!', COLOR_YELLOW, $totalNodes, COLOR_END, $tota
 */
 foreach ($nodes as $index => $node) {
     message(PHP_EOL.sprintf('Parsing node #%d... ', $index + 1));
-    $links = $path->query('./a', $node);
+    $links = $node->getElementsByTagName('a');
 
-    if (count($links) !== 2) {
+    if (count($links) !== 3) {
         line('FAILED!', COLOR_RED);
         continue;
     }
     success('OK!');
 
-    list($sourceNode, $newNode) = $links;
+    list($emptyNode, $sourceNode, $newNode) = $links;
     $source = $sourceNode->getAttribute('href');
     $new = 'https://gtmetrix.com'.$newNode->getAttribute('href');
 
@@ -178,7 +178,27 @@ foreach ($nodes as $index => $node) {
     }
     success('OK!');
 
+    /**
+     * Create the required subdirectories to save the images.
+     */
+    $path = __DIR__;
     $destination = str_replace($domain, getcwd(), $source);
+    $directories = explode('/', str_replace(__DIR__.'/', '', $destination));
+
+    array_pop($directories);
+
+    foreach ($directories as $directory) {
+        $path .= "/{$directory}";
+
+        if (file_exists($path)) {
+            continue;
+        }
+
+        message(sprintf('Creating directory %s%s%s...', COLOR_YELLOW, $path, COLOR_END));
+        mkdir($path);
+        success('OK!');
+    }
+
     message(sprintf('Saving the image from %s%s%s to %s%s%s... ', COLOR_YELLOW, $new, COLOR_END, COLOR_YELLOW, $destination, COLOR_END));
     file_put_contents($destination, file_get_contents($new));
     success('OK!');
